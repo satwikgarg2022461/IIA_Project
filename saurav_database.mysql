@@ -1,0 +1,49 @@
+create database doctors;
+
+use doctors;
+
+CREATE TABLE Doctors (
+    doctor_id INT PRIMARY KEY AUTO_INCREMENT,
+    name VARCHAR(100) NOT NULL,
+    specialty VARCHAR(100) NOT NULL,
+    phone_number VARCHAR(15),
+    email VARCHAR(100),
+    experience_years INT,
+    consultation_fees DECIMAL(10, 2),
+    address VARCHAR(255)
+);
+show tables;
+
+CREATE TABLE Hospitals (
+    hospital_id INT PRIMARY KEY AUTO_INCREMENT,
+    name VARCHAR(100) NOT NULL,
+    location VARCHAR(255),
+    specialties VARCHAR(255),
+    contact_info VARCHAR(255)
+);
+
+CREATE TABLE Tests (
+    test_id INT PRIMARY KEY AUTO_INCREMENT,
+    name VARCHAR(100) NOT NULL,
+    description TEXT,
+    duration INT,
+    cost DECIMAL(10, 2)
+);
+
+CREATE TABLE Hospital_Tests (
+    hospital_test_id INT PRIMARY KEY AUTO_INCREMENT,
+    hospital_id INT,
+    test_id INT,
+    FOREIGN KEY (hospital_id) REFERENCES Hospitals(hospital_id),
+    FOREIGN KEY (test_id) REFERENCES Tests(test_id)
+);
+
+CREATE TABLE Doctor_Hospital (
+    doctor_hospital_id INT PRIMARY KEY AUTO_INCREMENT,
+    doctor_id INT,
+    hospital_id INT,
+    available_day VARCHAR(15),
+    available_time VARCHAR(50),
+    FOREIGN KEY (doctor_id) REFERENCES Doctors(doctor_id),
+    FOREIGN KEY (hospital_id) REFERENCES Hospitals(hospital_id)
+);
