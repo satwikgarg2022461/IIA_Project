@@ -1,0 +1,58 @@
+-- Create the Hospital table
+CREATE TABLE Hospital (
+    HID INT PRIMARY KEY,
+    Name VARCHAR(255),
+    Street VARCHAR(255),
+    State VARCHAR(100),
+    Country VARCHAR(100),
+    Pincode INT
+);
+
+-- Create the Doctor table
+CREATE TABLE Doctor (
+    DID INT PRIMARY KEY,
+    Name VARCHAR(255),
+    ContactNumber INT,
+    Email VARCHAR(255),
+    Specialization VARCHAR(100),
+    Education VARCHAR(100)
+);
+
+-- Create the Test table
+CREATE TABLE Test (
+    TID INT PRIMARY KEY,
+    Name VARCHAR(255),
+    Description TEXT
+);
+
+-- Create the AppointmentTest table
+CREATE TABLE AppointmentTest (
+    ATID INT PRIMARY KEY,
+    TID INT,
+    HID INT,
+    Date DATE,
+    Time TIME,
+    Price INT,
+    FOREIGN KEY (TID) REFERENCES Test(TID),
+    FOREIGN KEY (HID) REFERENCES Hospital(HID)
+);
+
+-- Create the DoctorMapHospital table
+CREATE TABLE DoctorMapHospital (
+    DID INT,
+    HID INT,
+    PRIMARY KEY (DID, HID),
+    FOREIGN KEY (DID) REFERENCES Doctor(DID),
+    FOREIGN KEY (HID) REFERENCES Hospital(HID)
+);
+
+-- Create the AppointmentDoctor table
+CREATE TABLE AppointmentDoctor (
+    ADID INT PRIMARY KEY,
+    DID INT,
+    HID INT,
+    Date DATE,
+    Time TIME,
+    FOREIGN KEY (DID) REFERENCES Doctor(DID),
+    FOREIGN KEY (HID) REFERENCES Hospital(HID)
+);
