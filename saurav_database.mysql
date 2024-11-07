@@ -1,6 +1,3 @@
-create database doctors;
-
-use doctors;
 
 CREATE TABLE Doctors (
     doctor_id INT PRIMARY KEY AUTO_INCREMENT,
@@ -32,6 +29,8 @@ CREATE TABLE Hospital_Tests (
     hospital_test_id INT PRIMARY KEY AUTO_INCREMENT,
     hospital_id INT,
     test_id INT,
+    available_day VARCHAR(15),
+    available_time VARCHAR(50),
     FOREIGN KEY (hospital_id) REFERENCES Hospitals(hospital_id),
     FOREIGN KEY (test_id) REFERENCES Tests(test_id)
 );
@@ -45,3 +44,35 @@ CREATE TABLE Doctor_Hospital (
     FOREIGN KEY (doctor_id) REFERENCES Doctors(doctor_id),
     FOREIGN KEY (hospital_id) REFERENCES Hospitals(hospital_id)
 );
+
+-- Insert into Doctors table
+INSERT INTO Doctors (name, specialty, phone_number, email, experience_years, qualifications)
+VALUES 
+    ('Dr. Alice Johnson', 'Cardiology', '123-456-7890', 'alice.johnson@example.com', 15, 'MD, Cardiology'),
+    ('Dr. Bob Smith', 'Neurology', '234-567-8901', 'bob.smith@example.com', 10, 'MD, Neurology');
+
+-- Insert into Hospitals table
+INSERT INTO Hospitals (name, location, specialties, contact_info)
+VALUES 
+    ('General Hospital', '123 Main St, City', 'Cardiology, Neurology', 'contact@genhospital.com'),
+    ('City Medical Center', '456 Elm St, City', 'Pediatrics, Orthopedics', 'contact@citymedcenter.com');
+
+-- Insert into Tests table
+INSERT INTO Tests (name, description, cost)
+VALUES 
+    ('Blood Test', 'Routine blood test', 50.00),
+    ('MRI Scan', 'Magnetic Resonance Imaging', 300.00);
+
+-- Insert into Hospital_Tests table
+INSERT INTO Hospital_Tests (hospital_id, test_id, available_day, available_time)
+VALUES 
+    (1, 1, 'Monday', '9am-11am'),
+    (2, 2, 'Wednesday', '1pm-3pm');
+
+-- Insert into Doctor_Hospital table
+INSERT INTO Doctor_Hospital (doctor_id, hospital_id, available_day, available_time)
+VALUES 
+    (1, 1, 'Monday', '9am-5pm'),
+    (2, 2, 'Friday', '10am-4pm');
+
+
