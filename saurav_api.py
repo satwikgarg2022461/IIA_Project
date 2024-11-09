@@ -13,6 +13,16 @@ def get_db_connection():
         database="doctors"
     )
 
+# Helper function to format time
+def format_time(time_value):
+    if isinstance(time_value, datetime.timedelta):
+        # Convert timedelta to a string in "HH:MM" format
+        total_minutes = int(time_value.total_seconds() // 60)
+        hours, minutes = divmod(total_minutes, 60)
+        return f"{hours:02}:{minutes:02}"
+    elif isinstance(time_value, datetime.time):
+        return time_value.strftime('%H:%M:%S')
+    return None
 
 
 @app.route('/api/doctors', methods=['GET'])
@@ -21,11 +31,11 @@ def get_all_doctors():
     cursor = connection.cursor(dictionary=True)
 
     query = """
-        SELECT d.name AS DoctorName, d.phone_number, d.email, d.specialty, d.experience_years, d.qualifications,
-               h.name AS HospitalName, dh.available_day, dh.available_time
-        FROM Doctors d
-        JOIN Doctor_Hospital dh ON d.doctor_id = dh.doctor_id
-        JOIN Hospitals h ON dh.hospital_id = h.hospital_id
+        SELECT Doctors.name AS DoctorName, Doctors.phone_number, Doctors.email, Doctors.specialty, Doctors.experience_years, Doctors.qualifications,
+               Hospitals.name AS HospitalName, Doctor_Hospital.appointment_date, Doctor_Hospital.appointment_time, Doctor_Hospital.status
+        FROM Doctors
+        JOIN Doctor_Hospital ON Doctors.doctor_id = Doctor_Hospital.doctor_id
+        JOIN Hospitals ON Doctor_Hospital.hospital_id = Hospitals.hospital_id
     """
     cursor.execute(query)
     doctors = cursor.fetchall()
@@ -48,9 +58,10 @@ def get_all_doctors():
 
         results[doctor_name]["Hospitals"].append({
             "HospitalName": doctor['HospitalName'],
-            "Availability": {
-                "Day": doctor['available_day'],
-                "Time": doctor['available_time']
+            "AppointmentDetails": {
+                "Date": doctor['appointment_date'],
+                "Time": format_time(doctor['appointment_time']),
+                "Status": doctor['status']
             }
         })
 
@@ -63,10 +74,11 @@ def get_all_tests():
     cursor = connection.cursor(dictionary=True)
 
     query = """
-        SELECT t.name AS TestName, t.description, t.cost, h.name AS HospitalName, ht.available_day, ht.available_time
-        FROM Tests t
-        JOIN Hospital_Tests ht ON t.test_id = ht.test_id
-        JOIN Hospitals h ON ht.hospital_id = h.hospital_id
+        SELECT Tests.name AS TestName, Tests.description, Tests.cost,
+               Hospitals.name AS HospitalName, Hospital_Tests.appointment_date, Hospital_Tests.appointment_time, Hospital_Tests.status
+        FROM Tests
+        JOIN Hospital_Tests ON Tests.test_id = Hospital_Tests.test_id
+        JOIN Hospitals ON Hospital_Tests.hospital_id = Hospitals.hospital_id
     """
     cursor.execute(query)
     tests = cursor.fetchall()
@@ -82,9 +94,10 @@ def get_all_tests():
             "Hospital": {
                 "Name": test['HospitalName']
             },
-            "Availability": {
-                "Day": test['available_day'],
-                "Time": test['available_time']
+            "AppointmentDetails": {
+                "Date": test['appointment_date'],
+                "Time": format_time(test['appointment_time']),
+                "Status": test['status']
             }
         }
         results.append(test_info)
