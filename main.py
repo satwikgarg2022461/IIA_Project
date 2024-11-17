@@ -140,11 +140,73 @@ def call_db_satwik():
     print(test_col_mapping)
     print(appointment_doctor_col_mapping)
     print(appointment_test_col_mapping)
+    print("Satwik done\n\n")
 
+
+def return_col_mapping_db_saurav():
+    # Hospital Table
+    api_url_saurav_hospital = "http://127.0.0.1:5001/api/hospitals"  # Replace with the actual API URL
+    response = requests.get(api_url_saurav_hospital)
+    data = merge_address(response)
+    api_cols_hospital = []
+    for i in data[0]:
+        api_cols_hospital.append(i)
+    hospital_col_mapping = map_api_to_warehouse(hospital_column_synonyms, api_cols_hospital, 0.8)
+
+    # Doctor table
+    api_url_saurav_doctor = "http://127.0.0.1:5001/api/doctors"
+    response = requests.get(api_url_saurav_doctor)
+    data = response.json()
+    api_cols_doctor = []
+    for i in data[0]:
+        api_cols_doctor.append(i)
+    doctor_col_mapping = map_api_to_warehouse(doctor_column_synonyms, api_cols_doctor, 0.8)
+
+    # Test table
+    api_url_saurav_test = "http://127.0.0.1:5001/api/tests"
+    response = requests.get(api_url_saurav_test)
+    data = response.json()
+    api_cols_test = []
+    for i in data[0]:
+        api_cols_test.append(i)
+    test_col_mapping = map_api_to_warehouse(test_table_synonyms, api_cols_test, 0.8)
+
+    # Appointment doctor
+    api_url_saurav_doctor = "http://127.0.0.1:5001/api/doctors"
+    response = requests.get(api_url_saurav_doctor)
+    data = response.json()
+    api_cols_appointment_doctor = []
+    for i in data[0]['Hospitals'][0]['AppointmentDetails']:
+        api_cols_appointment_doctor.append(i)
+
+    appointment_doctor_col_mapping = map_api_to_warehouse(appointment_doctor_synonyms, api_cols_appointment_doctor, 0.8)
+
+    # Appointment test
+    api_url_saurav_test = "http://127.0.0.1:5001/api/tests"
+    response = requests.get(api_url_saurav_test)
+    data = response.json()
+    api_cols_appointment_test = []
+    for i in data[0]['AppointmentDetails']:
+        api_cols_appointment_test.append(i)
+    api_cols_appointment_test.append("Price")
+    appointment_test_col_mapping = map_api_to_warehouse(appointment_test_synonyms, api_cols_appointment_test, 0.8)
+
+    return hospital_col_mapping, doctor_col_mapping, test_col_mapping, appointment_doctor_col_mapping, appointment_test_col_mapping
+
+
+def call_db_saurav():
+    hospital_col_mapping, doctor_col_mapping, test_col_mapping, appointment_doctor_col_mapping, appointment_test_col_mapping = return_col_mapping_db_saurav()
+    print("Hospital Column Mapping:", hospital_col_mapping)
+    print("Doctor Column Mapping:", doctor_col_mapping)
+    print("Test Column Mapping:", test_col_mapping)
+    print("Appointment Doctor Column Mapping:", appointment_doctor_col_mapping)
+    print("Appointment Test Column Mapping:", appointment_test_col_mapping)
+    print("Saurav API processing complete.\n\n")
 
 
 if __name__ == "__main__":
     call_db_satwik()
+    call_db_saurav()
 
 
 
