@@ -63,7 +63,7 @@ def map_api_to_warehouse(warehouse_dict, api_cols, threshold):
 
         for warehouse_col, synonyms in warehouse_dict.items():
             for synonym in synonyms:
-                score = jellyfish.jaro_similarity(api_col, synonym)
+                score = jellyfish.jaro_similarity(api_col.lower(), synonym.lower())
                 if score > best_score and score >= threshold:
                     best_match = warehouse_col
                     best_score = score
