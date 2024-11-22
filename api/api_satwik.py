@@ -32,12 +32,20 @@ def get_all_doctors():
     cursor = connection.cursor(dictionary=True)
 
     query = """
-        SELECT Doctor.Name AS DoctorName, Doctor.ContactNumber, Doctor.Email, Doctor.Specialization, 
-               Doctor.Education, Hospital.Name AS HospitalName, AppointmentDoctor.Date, AppointmentDoctor.Time
-        FROM Doctor
-        JOIN DoctorMapHospital ON Doctor.DID = DoctorMapHospital.DID
-        JOIN Hospital ON DoctorMapHospital.HID = Hospital.HID
-        LEFT JOIN AppointmentDoctor ON Doctor.DID = AppointmentDoctor.DID AND Hospital.HID = AppointmentDoctor.HID
+        SELECT Doctor.Name AS DoctorName, 
+           Doctor.ContactNumber, 
+           Doctor.Email, 
+           Doctor.Specialization, 
+           Doctor.Education, 
+           Hospital.Name AS HospitalName, 
+           AppointmentDoctor.Date, 
+           AppointmentDoctor.Time,
+           AppointmentDoctor.Price AS AppointmentPrice
+            FROM Doctor
+            JOIN DoctorMapHospital ON Doctor.DID = DoctorMapHospital.DID
+            JOIN Hospital ON DoctorMapHospital.HID = Hospital.HID
+            LEFT JOIN AppointmentDoctor ON Doctor.DID = AppointmentDoctor.DID AND Hospital.HID = AppointmentDoctor.HID;
+
     """
     cursor.execute(query)
     doctors = cursor.fetchall()
@@ -65,7 +73,8 @@ def get_all_doctors():
             "HospitalName": doctor['HospitalName'],
             "AppointmentDetails": {
                 "Date": appointment_date,
-                "Time": appointment_time
+                "Time": appointment_time,
+                "AppointmentPrice": doctor['AppointmentPrice']
             }
         })
     return jsonify(list(results.values()))

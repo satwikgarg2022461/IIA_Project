@@ -9,8 +9,8 @@ def get_db_connection():
     return mysql.connector.connect(
         host="localhost",
         user="root",
-        password="Saurav@2022464",
-        database="doctors"
+        password="Satwik@07",
+        database="iia_saurav"
     )
 
 # Helper function to format time
@@ -132,4 +132,4 @@ def get_all_hospitals():
     return jsonify(results)
 
 if __name__ == '__main__':
-    app.run(debug=True)
+    app.run(debug=True, port=5001)
