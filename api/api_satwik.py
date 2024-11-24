@@ -9,15 +9,13 @@ def get_db_connection():
     return mysql.connector.connect(
         host="localhost",
         user="root",
-        password="Satwik@07",
+        password="root",
         database="iia_satwik"
     )
-
 
 # Helper function to format time
 def format_time(time_value):
     if isinstance(time_value, datetime.timedelta):
-        # Convert timedelta to a string in "HH:MM" format
         total_minutes = int(time_value.total_seconds() // 60)
         hours, minutes = divmod(total_minutes, 60)
         return f"{hours:02}:{minutes:02}"
@@ -25,7 +23,25 @@ def format_time(time_value):
         return time_value.strftime('%H:%M:%S')
     return None
 
+# Helper function to handle JSON serialization
+def serialize_row(row, column_names):
+    serialized_row = []
+    for col_name, value in zip(column_names, row):
+        if value is None:
+            # Convert NULL values to string "NULL"
+            serialized_row.append("NULL")
+        elif isinstance(value, (datetime.date, datetime.datetime)):
+            serialized_row.append(value.isoformat())
+        elif isinstance(value, datetime.time):
+            serialized_row.append(format_time(value))
+        elif isinstance(value, datetime.timedelta):
+            serialized_row.append(format_time(value))
+        else:
+            serialized_row.append(value)
+    return serialized_row
 
+
+# --- OLD ROUTES ---
 @app.route('/api/doctors', methods=['GET'])
 def get_all_doctors():
     connection = get_db_connection()
@@ -45,7 +61,6 @@ def get_all_doctors():
             JOIN DoctorMapHospital ON Doctor.DID = DoctorMapHospital.DID
             JOIN Hospital ON DoctorMapHospital.HID = Hospital.HID
             LEFT JOIN AppointmentDoctor ON Doctor.DID = AppointmentDoctor.DID AND Hospital.HID = AppointmentDoctor.HID;
-
     """
     cursor.execute(query)
     doctors = cursor.fetchall()
@@ -155,6 +170,94 @@ def get_all_hospitals():
     ]
 
     return jsonify(results)
+
+
+# --- NEW ROUTES ---
+@app.route('/api/doctors_schema_and_data', methods=['GET'])
+def get_all_doctors_with_schema():
+    connection = get_db_connection()
+    cursor = connection.cursor()
+
+    query = """
+        SELECT Doctor.Name AS DoctorName, 
+               Doctor.ContactNumber, 
+               Doctor.Email, 
+               Doctor.Specialization, 
+               Doctor.Education, 
+               Hospital.Name AS HospitalName, 
+               AppointmentDoctor.Date, 
+               AppointmentDoctor.Time,
+               AppointmentDoctor.Price AS AppointmentPrice
+        FROM Doctor
+        JOIN DoctorMapHospital ON Doctor.DID = DoctorMapHospital.DID
+        JOIN Hospital ON DoctorMapHospital.HID = Hospital.HID
+        LEFT JOIN AppointmentDoctor ON Doctor.DID = AppointmentDoctor.DID AND Hospital.HID = AppointmentDoctor.HID;
+    """
+    cursor.execute(query)
+    columns = [desc[0] for desc in cursor.description]
+    data = [tuple(serialize_row(row, columns)) for row in cursor.fetchall()]
+
+    cursor.close()
+    connection.close()
+
+    result = {
+        "schema": columns,
+        "data": data
+    }
+
+    return jsonify(result)
+
+
+@app.route('/api/tests_schema_and_data', methods=['GET'])
+def get_all_tests_with_schema():
+    connection = get_db_connection()
+    cursor = connection.cursor()
+
+    query = """
+        SELECT Test.Name AS TestName, Test.Description, AppointmentTest.Price, 
+               Hospital.Name AS HospitalName, Hospital.Street, Hospital.State, 
+               Hospital.Country, Hospital.Pincode, AppointmentTest.Date, AppointmentTest.Time
+        FROM Test
+        JOIN AppointmentTest ON Test.TID = AppointmentTest.TID
+        JOIN Hospital ON AppointmentTest.HID = Hospital.HID
+    """
+    cursor.execute(query)
+    columns = [desc[0] for desc in cursor.description]
+    data = [tuple(serialize_row(row, columns)) for row in cursor.fetchall()]
+
+    cursor.close()
+    connection.close()
+
+    result = {
+        "schema": columns,
+        "data": data
+    }
+
+    return jsonify(result)
+
+
+@app.route('/api/hospitals_schema_and_data', methods=['GET'])
+def get_all_hospitals_with_schema():
+    connection = get_db_connection()
+    cursor = connection.cursor()
+
+    query = """
+        SELECT Name, Street, State, Country, Pincode
+        FROM Hospital
+    """
+    cursor.execute(query)
+    columns = [desc[0] for desc in cursor.description]
+    data = [tuple(serialize_row(row, columns)) for row in cursor.fetchall()]
+
+    cursor.close()
+    connection.close()
+
+    result = {
+        "schema": columns,
+        "data": data
+    }
+
+    return jsonify(result)
 
 
 if __name__ == '__main__':
