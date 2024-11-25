@@ -1,83 +1,133 @@
-import { ConfigProvider, theme, Card } from "antd"; // Ant Design components
-import DoctorLogo from "../assets/doctor_svg.png";
+import { Card, ConfigProvider, theme, Descriptions, Button } from "antd";
+import { useState } from "react";
+import { ArrowLeftOutlined } from '@ant-design/icons'; // Importing the back arrow icon
 
 const DoctorResults = () => {
-    const dummyDoctors = [
-        { id: 1, name: "Dr. John Doe", specialty: "Cardiologist", hospital: "General Hospital" },
-        { id: 2, name: "Dr. Jane Smith", specialty: "Dermatologist", hospital: "City Clinic" },
-    ];
+  // Dummy data
+  const response = {
+    bestMatch: {
+      Name: "Dr. Priya Verma",
+      Specialization: "Dermatology",
+      ContactNumber: "9876543210",
+      Address: "456 Skin Care Road, New Delhi, India",
+      Email: "drpriya@dermahealth.com",
+      AvailableTimes: [
+        { Date: "2024-11-10", Time: "09:00", Price: 1800 },
+        { Date: "2024-11-11", Time: "14:00", Price: 2000 },
+      ],
+    },
+  };
 
-    const appointments = [
-        { id: 1, patient: "Alice Johnson", date: "2024-11-25", doctor: "Dr. John Doe" },
-        { id: 2, patient: "Bob Brown", date: "2024-11-26", doctor: "Dr. Jane Smith" },
-    ];
+  const { bestMatch } = response;
 
-    return (
-        <ConfigProvider
-            theme={{
-                algorithm: theme.darkAlgorithm,
-                token: {
-                    colorBgContainer: "#e2e8f0", // Tailwind gray-100
-                    colorText: "#1e293b", // Tailwind gray-800
-                    colorBorder: "#94a3b8", // Tailwind gray-400
-                },
-            }}
-        >
-            <div className="min-h-screen flex flex-col items-center justify-between bg-gray-100">
-                {/* Header */}
-                <header className="w-full py-4 bg-blue-700 text-white flex justify-between items-center px-6">
-                    <h1 className="text-2xl font-semibold">Welcome to our Health Compass</h1>
-                    <img src={DoctorLogo} alt="Doctors" className="h-10 w-10" />
-                </header>
+  const [selectedDoctor] = useState(bestMatch);
 
-                {/* Results Section */}
-                <main className="w-full flex flex-col items-center mt-12 px-4">
-                    {/* Doctors Section */}
-                    <section className="w-full max-w-4xl bg-white rounded-lg shadow-md p-6 mb-8">
-                        <h2 className="text-xl font-semibold text-gray-800 mb-4">Best Matching Doctors</h2>
-                        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                            {dummyDoctors.map((doctor) => (
-                                <Card key={doctor.id} className="shadow-sm">
-                                    <h3 className="text-lg font-bold">{doctor.name}</h3>
-                                    <p className="text-sm text-gray-700">{doctor.specialty}</p>
-                                    <p className="text-sm text-gray-500">{doctor.hospital}</p>
-                                </Card>
-                            ))}
-                        </div>
-                    </section>
+  const handleBackClick = () => {
+    window.history.back(); // Navigates to the previous page
+  };
 
-                    {/* Appointments Section */}
-                    <section className="w-full max-w-4xl bg-white rounded-lg shadow-md p-6">
-                        <h2 className="text-xl font-semibold text-gray-800 mb-4">Upcoming Appointments</h2>
-                        <ul className="space-y-4">
-                            {appointments.map((appointment) => (
-                                <li
-                                    key={appointment.id}
-                                    className="p-4 border border-gray-200 rounded-lg shadow-sm"
-                                >
-                                    <p className="text-sm font-medium">
-                                        <strong>Patient:</strong> {appointment.patient}
-                                    </p>
-                                    <p className="text-sm font-medium">
-                                        <strong>Date:</strong> {appointment.date}
-                                    </p>
-                                    <p className="text-sm font-medium">
-                                        <strong>Doctor:</strong> {appointment.doctor}
-                                    </p>
-                                </li>
-                            ))}
-                        </ul>
-                    </section>
-                </main>
+  return (
+    <ConfigProvider
+      theme={{
+        algorithm: theme.darkAlgorithm,
+        token: {
+          colorBgContainer: "#121212",
+          colorText: "#e0e0e0",
+          colorBorder: "#333333",
+        },
+      }}
+    >
+      <div className="min-h-screen flex flex-col bg-gray-950">
+        {/* Header Section */}
+        <header className="w-full py-4 bg-gray-800 border-b border-gray-700 shadow-lg flex items-center">
+          <Button
+            icon={<ArrowLeftOutlined />}
+            onClick={handleBackClick}
+            className="text-white mr-4"
+            type="link"
+          >
+            Back
+          </Button>
+          <h1 className="text-center text-white text-2xl tracking-wide flex-grow">
+            Health Compass - Doctor Details
+          </h1>
+        </header>
 
-                {/* Footer */}
-                <footer className="w-full py-4 bg-blue-700 text-white flex justify-between px-6 text-sm">
-                    <span className="hover:underline cursor-pointer">Terms & Conditions</span>
-                    <span className="hover:underline cursor-pointer">Help/Contact</span>
-                </footer>
+        <div className="flex-grow flex items-center justify-center bg-gray-950">
+          <div className="w-full max-w-3xl">
+            <div className="bg-gray-800 border border-gray-700 shadow-2xl rounded-lg p-6">
+              <h2 className="text-xl font-semibold text-gray-100 mb-4">
+                Doctor Details
+              </h2>
+              <Card
+                className="shadow-lg bg-gray-900 border-gray-800 text-gray-100"
+                bodyStyle={{ padding: "1rem" }}
+              >
+                <Descriptions
+                  title={<span className="text-lg font-bold text-blue-500">{selectedDoctor.Name}</span>}
+                  column={1}
+                  size="small"
+                  bordered
+                  labelStyle={{
+                    color: "#a3a3a3",
+                    fontWeight: "bold",
+                  }}
+                  contentStyle={{
+                    color: "#f3f4f6",
+                  }}
+                >
+                  <Descriptions.Item label="Specialization">
+                    {selectedDoctor.Specialization}
+                  </Descriptions.Item>
+                  <Descriptions.Item label="Contact Number">
+                    {selectedDoctor.ContactNumber}
+                  </Descriptions.Item>
+                  <Descriptions.Item label="Email">
+                    {selectedDoctor.Email}
+                  </Descriptions.Item>
+                  <Descriptions.Item label="Address">
+                    {selectedDoctor.Address}
+                  </Descriptions.Item>
+                </Descriptions>
+
+                {/* Available Times */}
+                <div>
+                  <h4 className="text-md font-medium text-green-500 mt-6 mb-2">
+                    Available Appointment Times
+                  </h4>
+                  {selectedDoctor.AvailableTimes.map((appointment, aIndex) => (
+                    <Card
+                      key={aIndex}
+                      className="bg-gray-900 mb-6 border-gray-700"
+                      bodyStyle={{ padding: "1rem" }}
+                    >
+                      <div className="text-gray-100">
+                        <p className="font-medium mb-2">
+                          <strong>Date:</strong> {appointment.Date} |{" "}
+                          <strong>Time:</strong> {appointment.Time} |{" "}
+                          <strong>Price:</strong> ₹{appointment.Price}
+                        </p>
+                      </div>
+                    </Card>
+                  ))}
+                </div>
+              </Card>
             </div>
-        </ConfigProvider>
-    );
+          </div>
+        </div>
+
+        {/* Footer Section */}
+        <footer className="w-full bg-gray-800 border-t border-gray-700 py-2 flex justify-between px-6 text-gray-400 text-sm shadow-lg mt-auto">
+          <span className="hover:text-blue-500 transition duration-300 cursor-pointer">
+            Terms & Conditions
+          </span>
+          <span className="hover:text-green-500 transition duration-300 cursor-pointer">
+            Help/Contact
+          </span>
+        </footer>
+      </div>
+    </ConfigProvider>
+  );
 };
 
 export default DoctorResults;
