@@ -1,21 +1,21 @@
-from flask import Flask, jsonify
-import mysql.connector
 import datetime
+
+import mysql.connector
+from flask import Flask, jsonify
 
 app = Flask(__name__)
 
-# Database connection function
-def get_db_connection():
-    return mysql.connector.connect(
-        host="localhost",
-        user="root",
-        password="root",
-        database="iia_satwik"
-    )
+# Database connection configuration
+DB_CONFIG = {
+    'user': 'root',
+    'password': 'Satwik@07',
+    'host': 'localhost',  # or the appropriate host
+    'database': 'iia_satwik'
+}
 
-# Helper function to format time
 def format_time(time_value):
     if isinstance(time_value, datetime.timedelta):
+        # Convert timedelta to a string in "HH:MM" format
         total_minutes = int(time_value.total_seconds() // 60)
         hours, minutes = divmod(total_minutes, 60)
         return f"{hours:02}:{minutes:02}"
@@ -23,242 +23,106 @@ def format_time(time_value):
         return time_value.strftime('%H:%M:%S')
     return None
 
-# Helper function to handle JSON serialization
-def serialize_row(row, column_names):
-    serialized_row = []
-    for col_name, value in zip(column_names, row):
-        if value is None:
-            # Convert NULL values to string "NULL"
-            serialized_row.append("NULL")
-        elif isinstance(value, (datetime.date, datetime.datetime)):
-            serialized_row.append(value.isoformat())
-        elif isinstance(value, datetime.time):
-            serialized_row.append(format_time(value))
-        elif isinstance(value, datetime.timedelta):
-            serialized_row.append(format_time(value))
-        else:
-            serialized_row.append(value)
-    return serialized_row
-
-
-# --- OLD ROUTES ---
-@app.route('/api/doctors', methods=['GET'])
-def get_all_doctors():
-    connection = get_db_connection()
-    cursor = connection.cursor(dictionary=True)
-
-    query = """
-        SELECT Doctor.Name AS DoctorName, 
-           Doctor.ContactNumber, 
-           Doctor.Email, 
-           Doctor.Specialization, 
-           Doctor.Education, 
-           Hospital.Name AS HospitalName, 
-           AppointmentDoctor.Date, 
-           AppointmentDoctor.Time,
-           AppointmentDoctor.Price AS AppointmentPrice
-            FROM Doctor
-            JOIN DoctorMapHospital ON Doctor.DID = DoctorMapHospital.DID
-            JOIN Hospital ON DoctorMapHospital.HID = Hospital.HID
-            LEFT JOIN AppointmentDoctor ON Doctor.DID = AppointmentDoctor.DID AND Hospital.HID = AppointmentDoctor.HID;
-    """
-    cursor.execute(query)
-    doctors = cursor.fetchall()
+# Helper function to execute queries
+def execute_query(query, params=None, fetchall=True):
+    conn = mysql.connector.connect(**DB_CONFIG)
+    cursor = conn.cursor()
+    cursor.execute(query, params if params else ())
+    if fetchall:
+        result = cursor.fetchall()
+    else:
+        result = cursor.fetchone()
+    conn.commit()
     cursor.close()
-    connection.close()
+    conn.close()
+    return result
 
-    results = {}
-    for doctor in doctors:
-        doctor_id = doctor['DoctorName']
-        if doctor_id not in results:
-            results[doctor_id] = {
-                "Name": doctor['DoctorName'],
-                "ContactNumber": doctor['ContactNumber'],
-                "Email": doctor['Email'],
-                "Specialization": doctor['Specialization'],
-                "Education": doctor['Education'],
-                "Hospitals": []
-            }
-
-        # Convert Date and Time to string format to ensure JSON serialization
-        appointment_date = doctor['Date'].isoformat() if doctor['Date'] else None
-        appointment_time = format_time(doctor['Time']) if doctor['Time'] else None
-
-        results[doctor_id]["Hospitals"].append({
-            "HospitalName": doctor['HospitalName'],
-            "AppointmentDetails": {
-                "Date": appointment_date,
-                "Time": appointment_time,
-                "AppointmentPrice": doctor['AppointmentPrice']
-            }
-        })
-    return jsonify(list(results.values()))
-
-
-@app.route('/api/tests', methods=['GET'])
-def get_all_tests():
-    connection = get_db_connection()
-    cursor = connection.cursor(dictionary=True)
-
-    query = """
-        SELECT Test.Name AS TestName, Test.Description, AppointmentTest.Price, 
-               Hospital.Name AS HospitalName, Hospital.Street, Hospital.State, 
-               Hospital.Country, Hospital.Pincode, AppointmentTest.Date, AppointmentTest.Time
-        FROM Test
-        JOIN AppointmentTest ON Test.TID = AppointmentTest.TID
-        JOIN Hospital ON AppointmentTest.HID = Hospital.HID
-    """
-    cursor.execute(query)
-    tests = cursor.fetchall()
-    cursor.close()
-    connection.close()
-
-    results = []
-    for test in tests:
-        # Convert Date and Time to string format to ensure JSON serialization
-        appointment_date = test['Date'].isoformat() if test['Date'] else None
-        appointment_time = format_time(test['Time']) if test['Time'] else None
-
-        test_info = {
-            "TestName": test['TestName'],
-            "Description": test['Description'],
-            "Price": test['Price'],
-            "Hospital": {
-                "Name": test['HospitalName'],
-                "Address": {
-                    "Street": test['Street'],
-                    "State": test['State'],
-                    "Country": test['Country'],
-                    "Pincode": test['Pincode']
-                }
-            },
-            "AppointmentDetails": {
-                "Date": appointment_date,
-                "Time": appointment_time
-            }
-        }
-        results.append(test_info)
-
-    return jsonify(results)
-
+# API Endpoints
 
 @app.route('/api/hospitals', methods=['GET'])
-def get_all_hospitals():
-    connection = get_db_connection()
-    cursor = connection.cursor(dictionary=True)
+def get_hospitals():
+    query = "SELECT Name, Street, State, Country, Pincode FROM Hospital;"
+    hospitals = execute_query(query)
+    return jsonify([{
+        'Name': hospital[0],
+        'Street': hospital[1],
+        'State': hospital[2],
+        'Country': hospital[3],
+        'Pincode': hospital[4]
+    } for hospital in hospitals])
 
-    query = """
-        SELECT Name, Street, State, Country, Pincode
-        FROM Hospital
+@app.route('/api/doctors', methods=['GET'])
+def get_doctors():
+    doctor_query = "SELECT DID, Name, ContactNumber, Email, Specialization, Education  FROM Doctor;"
+    hospital_query = """
+        SELECT H.Name 
+        FROM DoctorMapHospital DMH
+        JOIN Hospital H ON DMH.HID = H.HID
+        WHERE DMH.DID = %s;
     """
-    cursor.execute(query)
-    hospitals = cursor.fetchall()
-    cursor.close()
-    connection.close()
-
-    results = [
-        {
-            "Name": hospital['Name'],
-            "Address": {
-                "Street": hospital['Street'],
-                "State": hospital['State'],
-                "Country": hospital['Country'],
-                "Pincode": hospital['Pincode']
-            }
-        }
-        for hospital in hospitals
-    ]
-
-    return jsonify(results)
-
-
-# --- NEW ROUTES ---
-@app.route('/api/doctors_schema_and_data', methods=['GET'])
-def get_all_doctors_with_schema():
-    connection = get_db_connection()
-    cursor = connection.cursor()
-
-    query = """
-        SELECT Doctor.Name AS DoctorName, 
-               Doctor.ContactNumber, 
-               Doctor.Email, 
-               Doctor.Specialization, 
-               Doctor.Education, 
-               Hospital.Name AS HospitalName, 
-               AppointmentDoctor.Date, 
-               AppointmentDoctor.Time,
-               AppointmentDoctor.Price AS AppointmentPrice
-        FROM Doctor
-        JOIN DoctorMapHospital ON Doctor.DID = DoctorMapHospital.DID
-        JOIN Hospital ON DoctorMapHospital.HID = Hospital.HID
-        LEFT JOIN AppointmentDoctor ON Doctor.DID = AppointmentDoctor.DID AND Hospital.HID = AppointmentDoctor.HID;
-    """
-    cursor.execute(query)
-    columns = [desc[0] for desc in cursor.description]
-    data = [tuple(serialize_row(row, columns)) for row in cursor.fetchall()]
-
-    cursor.close()
-    connection.close()
-
-    result = {
-        "schema": columns,
-        "data": data
-    }
-
+    doctors = execute_query(doctor_query)
+    result = []
+    for doctor in doctors:
+        hospitals = execute_query(hospital_query, (doctor[0],))
+        hospital_list = [hospital[0] for hospital in hospitals]
+        result.append({
+            'Name': doctor[1],
+            'ContactNumber': doctor[2],
+            'Email': doctor[3],
+            'Specialization': doctor[4],
+            'Education': doctor[5],
+            'Hospitals': hospital_list
+        })
     return jsonify(result)
 
+@app.route('/api/tests', methods=['GET'])
+def get_tests():
+    query = "SELECT Name, Description, Price FROM Test;"
+    tests = execute_query(query)
+    return jsonify([{
+        'Name': test[0],
+        'Description': test[1],
+        'Price' : test[2]
+    } for test in tests])
 
-@app.route('/api/tests_schema_and_data', methods=['GET'])
-def get_all_tests_with_schema():
-    connection = get_db_connection()
-    cursor = connection.cursor()
 
+@app.route('/api/appointmentdoctor', methods=['GET'])
+def get_appointment_doctor():
     query = """
-        SELECT Test.Name AS TestName, Test.Description, AppointmentTest.Price, 
-               Hospital.Name AS HospitalName, Hospital.Street, Hospital.State, 
-               Hospital.Country, Hospital.Pincode, AppointmentTest.Date, AppointmentTest.Time
-        FROM Test
-        JOIN AppointmentTest ON Test.TID = AppointmentTest.TID
-        JOIN Hospital ON AppointmentTest.HID = Hospital.HID
+        SELECT D.Name, D.ContactNumber, D.Email, H.Name, H.Street, H.State, H.Country, H.Pincode, AD.Date, AD.Time, AD.Price
+        FROM AppointmentDoctor AD
+        JOIN Doctor D ON AD.DID = D.DID
+        JOIN Hospital H ON AD.HID = H.HID;
     """
-    cursor.execute(query)
-    columns = [desc[0] for desc in cursor.description]
-    data = [tuple(serialize_row(row, columns)) for row in cursor.fetchall()]
+    appointments = execute_query(query)
+    return jsonify([{
+        'DoctorName': appt[0],
+        'ContactNumber': appt[1],
+        'Email': appt[2],
+        'HospitalName': appt[3],
+        'Address': f"{appt[4]}, {appt[5]}, {appt[6]}, {appt[7]}",
+        'Date': appt[8],
+        'Time': str(appt[9]),
+        'Price': appt[10]
+    } for appt in appointments])
 
-    cursor.close()
-    connection.close()
-
-    result = {
-        "schema": columns,
-        "data": data
-    }
-
-    return jsonify(result)
-
-
-@app.route('/api/hospitals_schema_and_data', methods=['GET'])
-def get_all_hospitals_with_schema():
-    connection = get_db_connection()
-    cursor = connection.cursor()
-
+@app.route('/api/appointmenttest', methods=['GET'])
+def get_appointment_test():
     query = """
-        SELECT Name, Street, State, Country, Pincode
-        FROM Hospital
+        SELECT T.Name, T.Description, H.Name, H.Street, H.State, H.Country, H.Pincode, AT.Date, AT.Time
+        FROM AppointmentTest AT
+        JOIN Test T ON AT.TID = T.TID
+        JOIN Hospital H ON AT.HID = H.HID;
     """
-    cursor.execute(query)
-    columns = [desc[0] for desc in cursor.description]
-    data = [tuple(serialize_row(row, columns)) for row in cursor.fetchall()]
-
-    cursor.close()
-    connection.close()
-
-    result = {
-        "schema": columns,
-        "data": data
-    }
-
-    return jsonify(result)
-
+    appointments = execute_query(query)
+    return jsonify([{
+        'TestName': appt[0],
+        'Description': appt[1],
+        'HospitalName': appt[2],
+        'Address': f"{appt[3]}, {appt[4]}, {appt[5]}, {appt[6]}",
+        'Date': appt[7],
+        'Time': str(appt[8]),
+    } for appt in appointments])
 
 if __name__ == '__main__':
-    app.run(debug=True)
+    app.run(debug=True, port=5000)
