@@ -31,8 +31,8 @@ def get_all_doctors():
     cursor = connection.cursor(dictionary=True)
 
     query = """
-        SELECT Doctors.name AS DoctorName, Doctors.phone_number, Doctors.email, Doctors.specialty, Doctors.experience_years, Doctors.qualifications,
-               Hospitals.name AS HospitalName, Doctor_Hospital.appointment_date, Doctor_Hospital.appointment_time, Doctor_Hospital.status
+        SELECT Doctors.name AS DoctorName, Doctors.phone_number, Doctors.email, Doctors.specialty, Doctors.qualifications,
+               Hospitals.name AS HospitalName, Doctors.experience_years 
         FROM Doctors
         JOIN Doctor_Hospital ON Doctors.doctor_id = Doctor_Hospital.doctor_id
         JOIN Hospitals ON Doctor_Hospital.hospital_id = Hospitals.hospital_id
@@ -47,25 +47,24 @@ def get_all_doctors():
         doctor_name = doctor['DoctorName']
         if doctor_name not in results:
             results[doctor_name] = {
-                "Name": doctor['DoctorName'],
-                "PhoneNumber": doctor['phone_number'],
+                "Name": f"{doctor['DoctorName']}",
+                "ContactNumber": doctor['phone_number'],
                 "Email": doctor['email'],
-                "Specialty": doctor['specialty'],
-                "ExperienceYears": doctor['experience_years'],
-                "Qualifications": doctor['qualifications'],
-                "Hospitals": []
+                "Specialization": doctor['specialty'],
+                "Education": doctor['qualifications'],
+                "experience_years": doctor['experience_years'],
+                "Hospitals": set()
             }
 
-        results[doctor_name]["Hospitals"].append({
-            "HospitalName": doctor['HospitalName'],
-            "AppointmentDetails": {
-                "Date": doctor['appointment_date'],
-                "Time": format_time(doctor['appointment_time']),
-                "Status": doctor['status']
-            }
-        })
+        # Add hospital name to the set
+        results[doctor_name]["Hospitals"].add(doctor['HospitalName'])
+
+    # Convert the set of hospitals to a list for the final output
+    for doctor in results.values():
+        doctor["Hospitals"] = list(doctor["Hospitals"])
 
     return jsonify(list(results.values()))
+
 
 
 @app.route('/api/tests', methods=['GET'])
@@ -74,11 +73,7 @@ def get_all_tests():
     cursor = connection.cursor(dictionary=True)
 
     query = """
-        SELECT Tests.name AS TestName, Tests.description, Tests.cost,
-               Hospitals.name AS HospitalName, Hospital_Tests.appointment_date, Hospital_Tests.appointment_time, Hospital_Tests.status
-        FROM Tests
-        JOIN Hospital_Tests ON Tests.test_id = Hospital_Tests.test_id
-        JOIN Hospitals ON Hospital_Tests.hospital_id = Hospitals.hospital_id
+        SELECT name AS TestName, description, cost FROM Tests
     """
     cursor.execute(query)
     tests = cursor.fetchall()
@@ -91,14 +86,6 @@ def get_all_tests():
             "TestName": test['TestName'],
             "Description": test['description'],
             "Cost": float(test['cost']),
-            "Hospital": {
-                "Name": test['HospitalName']
-            },
-            "AppointmentDetails": {
-                "Date": test['appointment_date'],
-                "Time": format_time(test['appointment_time']),
-                "Status": test['status']
-            }
         }
         results.append(test_info)
 
@@ -130,6 +117,96 @@ def get_all_hospitals():
     ]
 
     return jsonify(results)
+
+
+
+# Route to get doctor appointments with hospital names
+@app.route('/api/appointments-doctor', methods=['GET'])
+def get_appointments_doctor():
+    connection = get_db_connection()
+    cursor = connection.cursor(dictionary=True)
+
+    query = """
+        SELECT 
+            d.name AS doctor_name,
+            d.phone_number AS doctor_phone,
+            d.email AS doctor_email,
+            h.name AS hospital_name,
+            dh.appointment_date,
+            dh.appointment_time,
+            dh.status,
+            dh.price
+        FROM 
+            Doctor_Hospital dh
+        JOIN 
+            Doctors d ON dh.doctor_id = d.doctor_id
+        JOIN 
+            Hospitals h ON dh.hospital_id = h.hospital_id
+    """
+    cursor.execute(query)
+    appointments = cursor.fetchall()
+    cursor.close()
+    connection.close()
+
+    results = [
+        {
+            "DoctorName": appointment['doctor_name'],
+            "DoctorPhone": appointment['doctor_phone'],
+            "DoctorEmail": appointment['doctor_email'],
+            "HospitalName": appointment['hospital_name'],
+            "AppointmentDate": appointment['appointment_date'],
+            "AppointmentTime": format_time(appointment['appointment_time']),
+            "Status": appointment['status'],
+            "Price": float(appointment['price'])
+        }
+        for appointment in appointments
+    ]
+
+    return jsonify(results)
+
+# Route to get test appointments with hospital names
+@app.route('/api/appointments-test', methods=['GET'])
+def get_appointments_test():
+    connection = get_db_connection()
+    cursor = connection.cursor(dictionary=True)
+
+    query = """
+        SELECT 
+            h.name AS hospital_name,
+            t.name AS test_name,
+            t.description AS test_description,
+            t.cost AS test_cost,
+            ht.appointment_date,
+            ht.appointment_time,
+            ht.status
+        FROM 
+            Hospital_Tests ht
+        JOIN 
+            Hospitals h ON ht.hospital_id = h.hospital_id
+        JOIN 
+            Tests t ON ht.test_id = t.test_id
+    """
+    cursor.execute(query)
+    test_appointments = cursor.fetchall()
+    cursor.close()
+    connection.close()
+
+    results = [
+        {
+            "HospitalName": appointment['hospital_name'],
+            "TestName": appointment['test_name'],
+            "TestDescription": appointment['test_description'],
+            "TestCost": float(appointment['test_cost']),
+            "AppointmentDate": appointment['appointment_date'],
+            "AppointmentTime": format_time(appointment['appointment_time']),
+            "Status": appointment['status']
+        }
+        for appointment in test_appointments
+    ]
+
+    return jsonify(results)
+
+
 
 if __name__ == '__main__':
     app.run(debug=True, port=5001)

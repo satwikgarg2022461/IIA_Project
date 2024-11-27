@@ -8,10 +8,9 @@ CREATE TABLE Doctor (
     speciality VARCHAR(50),
     experience INT,
     education TEXT,
-    h_id INTEGER[],
-    counting INT,
-    source TEXT[]
+    h_id INTEGER[]
 );
+
 
 -- Create the Hospital table
 CREATE TABLE Hospital (
@@ -19,9 +18,7 @@ CREATE TABLE Hospital (
     h_name VARCHAR(100) NOT NULL,
     email VARCHAR(100),
     address TEXT,
-    speciality VARCHAR(50),
-    counting INT,
-    source TEXT[]
+    speciality VARCHAR(50)
 );
 
 -- Create the Test table
@@ -29,9 +26,7 @@ CREATE TABLE Test (
     t_id SERIAL PRIMARY KEY,
     t_name VARCHAR(100) NOT NULL,
     description TEXT,
-    cost INT,
-    counting INT,
-    source TEXT[]
+    cost DECIMAL(10,2)
 );
 
 -- Create the Appointment_doctor table
@@ -42,9 +37,7 @@ CREATE TABLE Appointment_doctor (
     time TIME NOT NULL,
     date DATE NOT NULL,
     price INT,
-    status INT,
-    counting INT,
-    source TEXT[]
+    status TEXT
 );
 
 -- Create the Appointment_test table
@@ -54,7 +47,5 @@ CREATE TABLE Appointment_test (
     h_id INT REFERENCES Hospital(h_id) ON DELETE CASCADE,
     time TIME NOT NULL,
     date DATE NOT NULL,
-    status INT,
-    counting INT,
-    source TEXT[]
+    status TEXT
 );
