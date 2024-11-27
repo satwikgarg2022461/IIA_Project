@@ -1,29 +1,47 @@
 import { Card, ConfigProvider, theme, Descriptions, Button } from "antd";
 import { useState } from "react";
-import { ArrowLeftOutlined } from '@ant-design/icons'; // Importing the back arrow icon
+import { ArrowLeftOutlined } from '@ant-design/icons';
+import { useLocation } from "react-router-dom";
 
 const DoctorResults = () => {
-  // Dummy data
-  const response = {
-    bestMatch: {
-      Name: "Dr. Priya Verma",
-      Specialization: "Dermatology",
-      ContactNumber: "9876543210",
-      Address: "456 Skin Care Road, New Delhi, India",
-      Email: "drpriya@dermahealth.com",
-      AvailableTimes: [
-        { Date: "2024-11-10", Time: "09:00", Price: 1800 },
-        { Date: "2024-11-11", Time: "14:00", Price: 2000 },
-      ],
-    },
-  };
+  const location = useLocation();
+  const { results } = location.state || { results: [] };
 
-  const { bestMatch } = response;
+  // Group appointments by doctor
+  // Grouping the doctors
+const groupedDoctors = results.reduce((acc, doctor) => {
+  const { d_name, email, phone, date, time, status, price } = doctor;
 
-  const [selectedDoctor] = useState(bestMatch);
+  // Unique key to identify a doctor
+  const key = `${d_name}-${email}-${phone}`;
+
+  // If doctor already exists in the accumulator, push appointment details
+  if (acc[key]) {
+    acc[key].appointments.push({ date, time, status, price });
+  } else {
+    // Add new doctor entry with their initial appointment
+    acc[key] = {
+      d_name,
+      email,
+      phone,
+      education: doctor.education,
+      experience: doctor.experience,
+      hospital_name: doctor.hospital_name,
+      speciality: doctor.speciality,
+      appointments: [{ date, time, status, price }],
+    };
+  }
+
+  return acc;
+}, {});
+
+// Converting the result to an array
+const doctorsList = Object.values(groupedDoctors);
+
+console.log(doctorsList);
 
   const handleBackClick = () => {
-    window.history.back(); // Navigates to the previous page
+    window.history.back();
   };
 
   return (
@@ -55,64 +73,85 @@ const DoctorResults = () => {
 
         <div className="flex-grow flex items-center justify-center bg-gray-950">
           <div className="w-full max-w-3xl">
-            <div className="bg-gray-800 border border-gray-700 shadow-2xl rounded-lg p-6">
-              <h2 className="text-xl font-semibold text-gray-100 mb-4">
-                Doctor Details
-              </h2>
-              <Card
-                className="shadow-lg bg-gray-900 border-gray-800 text-gray-100"
-                bodyStyle={{ padding: "1rem" }}
+            {doctorsList.map((doctor) => (
+              <div
+                key={doctor.d_id}
+                className="bg-gray-800 border border-gray-700 shadow-2xl rounded-lg p-6 mb-6"
               >
-                <Descriptions
-                  title={<span className="text-lg font-bold text-blue-500">{selectedDoctor.Name}</span>}
-                  column={1}
-                  size="small"
-                  bordered
-                  labelStyle={{
-                    color: "#a3a3a3",
-                    fontWeight: "bold",
-                  }}
-                  contentStyle={{
-                    color: "#f3f4f6",
-                  }}
+                <h2 className="text-xl font-semibold text-gray-100 mb-4">
+                  Doctor Details
+                </h2>
+                <Card
+                  className="shadow-lg bg-gray-900 border-gray-800 text-gray-100"
+                  bodyStyle={{ padding: "1rem" }}
                 >
-                  <Descriptions.Item label="Specialization">
-                    {selectedDoctor.Specialization}
-                  </Descriptions.Item>
-                  <Descriptions.Item label="Contact Number">
-                    {selectedDoctor.ContactNumber}
-                  </Descriptions.Item>
-                  <Descriptions.Item label="Email">
-                    {selectedDoctor.Email}
-                  </Descriptions.Item>
-                  <Descriptions.Item label="Address">
-                    {selectedDoctor.Address}
-                  </Descriptions.Item>
-                </Descriptions>
+                  <Descriptions
+                    title={<span className="text-lg font-bold text-blue-500">{doctor.d_name}</span>}
+                    column={1}
+                    size="small"
+                    bordered
+                    labelStyle={{
+                      color: "#a3a3a3",
+                      fontWeight: "bold",
+                    }}
+                    contentStyle={{
+                      color: "#f3f4f6",
+                    }}
+                  >
+                    <Descriptions.Item label="Specialization">
+                      {doctor.speciality}
+                    </Descriptions.Item>
+                    <Descriptions.Item label="Contact Number">
+                      {doctor.phone}
+                    </Descriptions.Item>
+                    <Descriptions.Item label="Email">
+                      {doctor.email}
+                    </Descriptions.Item>
+                    <Descriptions.Item label="Education">
+                      {doctor.education}
+                    </Descriptions.Item>
+                    <Descriptions.Item label="Hospital Name">
+                      {doctor.hospital_name}
+                    </Descriptions.Item>
+                    <Descriptions.Item label="Price">
+                      ₹{doctor.price}
+                    </Descriptions.Item>
+                    <Descriptions.Item label="Experience">
+                      {doctor.experience || "N/A"}
+                    </Descriptions.Item>
+                  </Descriptions>
 
-                {/* Available Times */}
-                <div>
-                  <h4 className="text-md font-medium text-green-500 mt-6 mb-2">
-                    Available Appointment Times
-                  </h4>
-                  {selectedDoctor.AvailableTimes.map((appointment, aIndex) => (
-                    <Card
-                      key={aIndex}
-                      className="bg-gray-900 mb-6 border-gray-700"
-                      bodyStyle={{ padding: "1rem" }}
-                    >
-                      <div className="text-gray-100">
-                        <p className="font-medium mb-2">
-                          <strong>Date:</strong> {appointment.Date} |{" "}
-                          <strong>Time:</strong> {appointment.Time} |{" "}
-                          <strong>Price:</strong> ₹{appointment.Price}
-                        </p>
-                      </div>
-                    </Card>
-                  ))}
-                </div>
-              </Card>
-            </div>
+                  {/* Appointments Section */}
+                  <div>
+                    <h4 className="text-md font-medium text-green-500 mt-6 mb-2">
+                      Available Appointment Times
+                    </h4>
+                    {doctor.appointments.length > 0 ? (
+                      doctor.appointments.map((appointment, aIndex) => (
+                        <Card
+                          key={aIndex}
+                          className="bg-gray-900 mb-6 border-gray-700"
+                          bodyStyle={{ padding: "1rem" }}
+                        >
+                          <div className="text-gray-100">
+                            <p className="font-medium mb-2">
+                              <strong>Date:</strong> {appointment.date} |{" "}
+                              <strong>Time:</strong> {appointment.time || "Not Available"}
+                            </p>
+                            <p className="text-sm">
+                              <strong>Status:</strong> {appointment.status || "N/A"} |{" "}
+                              <strong>Price:</strong> ₹{appointment.price}
+                            </p>
+                          </div>
+                        </Card>
+                      ))
+                    ) : (
+                      <p className="text-gray-400">No appointments available</p>
+                    )}
+                  </div>
+                </Card>
+              </div>
+            ))}
           </div>
         </div>
 

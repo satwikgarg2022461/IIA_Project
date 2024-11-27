@@ -1,6 +1,12 @@
 from flask import Flask, request, jsonify
 import psycopg2
 from psycopg2.extras import Json
+from psycopg2.extras import RealDictCursor
+import datetime
+import requests
+import random
+from flask_cors import CORS
+
 
 # Database connection
 DB_HOST = "localhost"
@@ -13,7 +19,27 @@ conn = psycopg2.connect(
     host=DB_HOST, dbname=DB_NAME, user=DB_USER, password=DB_PASSWORD, port=PORT
 )
 app = Flask(__name__)
+CORS(app, resources={r"/*": {"origins": "http://localhost:5173"}})
 
+
+@app.after_request
+def add_cors_headers(response):
+    response.headers.add("Access-Control-Allow-Origin", "http://localhost:5173")
+    response.headers.add("Access-Control-Allow-Headers", "Content-Type,Authorization")
+    response.headers.add("Access-Control-Allow-Methods", "GET,POST,OPTIONS")
+    response.headers.add("Access-Control-Allow-Credentials", "true")
+    return response
+
+# Helper function to format time
+def format_time(time_value):
+    if isinstance(time_value, datetime.timedelta):
+        # Convert timedelta to a string in "HH:MM" format
+        total_minutes = int(time_value.total_seconds() // 60)
+        hours, minutes = divmod(total_minutes, 60)
+        return f"{hours:02}:{minutes:02}"
+    elif isinstance(time_value, datetime.time):
+        return time_value.strftime('%H:%M:%S')
+    return None
 
 # Helper to execute queries
 def execute_query(query, values):
@@ -200,6 +226,269 @@ def get_tid_by_test_and_hospital():
         return jsonify({"error": str(e)}), 500
 
 
+@app.route("/test", methods=["GET"])
+def test():
+    query = """SELECT * FROM doctor"""
+    try:
+        with conn.cursor() as cur:
+            cur.execute(query)
+            result = cur.fetchall()  # Use fetchall() to get all rows, not just one
+            if result:
+                # Convert the result to a list of dictionaries
+                columns = [desc[0] for desc in cur.description]  # Get column names
+                result_list = [dict(zip(columns, row)) for row in result]
+                return jsonify(result_list)  # Return the result as a JSON response
+            else:
+                return jsonify({"error": "Test or hospital not found"}), 404
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
+import time
+import time
+@app.route("/get-doctor-info", methods=["POST"])
+def get_doctor_info():
+    doctor_base = """
+        SELECT 
+            d.d_name, d.phone, d.email, d.speciality, d.experience, d.education,
+            h.h_name AS hospital_name, ad.time, ad.date, ad.price, ad.status
+        FROM Doctor d
+        LEFT JOIN Appointment_doctor ad ON d.d_id = ad.d_id
+        LEFT JOIN Hospital h ON ad.h_id = h.h_id
+    """
+    data = request.get_json()
+    doctor_name = data.get("name")
+    speciality = data.get("speciality")
+
+    filters = []
+    values = []
+
+    if doctor_name:
+        filters.append("d.d_name LIKE %s")
+        values.append(f"%{doctor_name}%")
+
+    if speciality:
+        filters.append("d.speciality LIKE %s")
+        values.append(f"%{speciality}%")
+
+    where_clause = f"WHERE {' AND '.join(filters)}" if filters else ""
+    query = f"{doctor_base} {where_clause}"
+
+    def call_api(url, params=None, retries=0):
+        """Try to call an API with retries."""
+        attempts = 0
+        while attempts <= retries:
+            try:
+                response = requests.get(url, params=params)
+                if response.status_code == 200:
+                    return response.json()
+            except Exception as e:
+                print(f"Error calling API at {url} on attempt {attempts + 1}: {e}")
+            attempts += 1
+            time.sleep(2)  # Wait for 2 seconds before retrying
+        return None  # Return None if all attempts fail
+
+    # Check test API endpoints before processing results
+    api_5000_status = call_api("http://localhost:5000/api/test")
+    api_5001_status = call_api("http://localhost:5001/api/test")
+
+    if api_5000_status is None or api_5001_status is None:
+        with conn.cursor(cursor_factory=RealDictCursor) as cur:
+            cur.execute(query, tuple(values))
+            results = cur.fetchall()
+            for result in results:
+                result["time"] = format_time(result["time"])
+            return jsonify(results)
+
+
+    try:
+        with conn.cursor(cursor_factory=RealDictCursor) as cur:
+            cur.execute(query, tuple(values))
+            results = cur.fetchall()
+
+            for result in results:
+                params = {
+                    "doctor_name": result["d_name"],
+                    "email": result["email"],
+                    "contactno": result["phone"],
+                    "hospital_name": result["hospital_name"]
+                }
+                responses = []
+
+                # Call the first API with retry mechanism
+                api_data_5000 = call_api("http://localhost:5000/api/appointmentdoctor", params)
+                if api_data_5000:
+                    responses.append(api_data_5000[0])  # Add the first record from API 5000
+
+                # Call the second API with retry mechanism
+                api_data_5001 = call_api("http://localhost:5001/api/appointments-doctor", params)
+                if api_data_5001:
+                    responses.append(api_data_5001[0])  # Add the first record from API 5001
+
+                # If we got responses from any API
+                if responses:
+                    selected_response = random.choice(responses)
+                    result["date"] = selected_response.get("AppointmentDate", result["date"])
+                    result["time"] = format_time(selected_response.get("AppointmentTime", result["time"]))
+                else:
+                    # Fall back to the existing data
+                    result["time"] = format_time(result["time"])
+
+            return jsonify(results)
+
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
+
+
+
+
+
+@app.route("/get-test-info", methods=["POST"])
+def get_test_info():
+    test_base = """
+        SELECT 
+            t.t_name, t.description, t.cost, h.h_name AS hospital_name, 
+            at.time, at.date, at.status
+        FROM Test t
+        LEFT JOIN Appointment_test at ON t.t_id = at.t_id
+        LEFT JOIN Hospital h ON at.h_id = h.h_id
+    """
+
+    data = request.get_json()
+    # Get query parameters
+    test_name = data.get("t_name")
+    hospital_name = data.get("h_name")
+
+    # Apply filters using LIKE for partial matching
+    filters = []
+    if test_name:
+        filters.append("t.t_name LIKE %s")
+    if hospital_name:
+        filters.append("h.h_name LIKE %s")
+
+    where_clause = f"WHERE {' AND '.join(filters)}" if filters else ""
+    query = f"{test_base} {where_clause}"
+
+    # Values for the query placeholders with wildcard for LIKE
+    values = tuple(filter(None, [f"%{test_name}%" if test_name else None,
+                                 f"%{hospital_name}%" if hospital_name else None]))
+
+    def call_api(url, params=None, retries=0):
+        """Try to call an API with retries."""
+        attempts = 0
+        while attempts <= retries:
+            try:
+                response = requests.get(url, params=params)
+                if response.status_code == 200:
+                    return response.json()
+            except Exception as e:
+                print(f"Error calling API at {url} on attempt {attempts + 1}: {e}")
+            attempts += 1
+            time.sleep(2)  # Wait for 2 seconds before retrying
+        return None
+
+    api_5000_status = call_api("http://localhost:5000/api/test")
+    api_5001_status = call_api("http://localhost:5001/api/test")
+
+    if api_5000_status is None or api_5001_status is None:
+        try:
+            with conn.cursor(cursor_factory=RealDictCursor) as cur:
+                cur.execute(query, values)
+                results = cur.fetchall()
+                for result in results:
+                    result["time"] = format_time(result["time"])
+                return jsonify(results)
+        except Exception as e:
+            return jsonify({"error": str(e)}), 500
+
+    try:
+        with conn.cursor(cursor_factory=RealDictCursor) as cur:
+            cur.execute(query, values)
+            results = cur.fetchall()
+
+            for result in results:
+                # Prepare data for the external API calls
+                params = {
+                    "test_name": result["t_name"],
+                    "hospital_name": result["hospital_name"]
+                }
+                responses = []
+
+                # Query the first API
+                try:
+                    response_5000 = requests.get("http://localhost:5000/api/appointmenttest", params=params)
+                    if response_5000.status_code == 200:
+                        api_data_5000 = response_5000.json()
+                        if api_data_5000:  # Ensure the list is not empty
+                            responses.append(api_data_5000[0])  # Take the first record
+                except Exception as e:
+                    print(f"Error calling API on port 5000: {e}")
+
+                # Query the second API
+                try:
+                    response_5001 = requests.get("http://localhost:5001/api/appointments-test", params=params)
+                    if response_5001.status_code == 200:
+                        api_data_5001 = response_5001.json()
+                        if api_data_5001:  # Ensure the list is not empty
+                            responses.append(api_data_5001[0])  # Take the first record
+                except Exception as e:
+                    print(f"Error calling API on port 5001: {e}")
+
+                # Use a response if available
+                if responses:
+                    # Choose one response (e.g., randomly or by priority)
+                    selected_response = random.choice(responses)
+                    result["date"] = selected_response.get("AppointmentDate", result["date"])
+                    result["time"] = format_time(selected_response.get("AppointmentTime", result["time"]))
+                else:
+                    # Fall back to the existing data
+                    result["time"] = format_time(result["time"])
+
+            return jsonify(results)
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
+
+
+
+@app.route("/get-hospital-info", methods=["POST"])
+def get_hospital_info():
+
+    hospital_base = """
+        SELECT 
+            h_name AS hospital_name, 
+            email AS hospital_email, 
+            address AS hospital_address, 
+            speciality AS hospital_speciality
+        FROM hospital
+    """
+
+    data = request.get_json()
+
+    # Get query parameters
+    hospital_name = data.get('name')
+    speciality = data.get('specialty')
+
+    # Apply filters based on provided parameters
+    filters = []
+    values = []
+
+    if hospital_name:
+        filters.append("h_name = %s")
+        values.append(hospital_name)
+
+    if speciality:
+        # Use SQL LIKE to search within the comma-separated speciality column
+        filters.append("speciality LIKE %s")
+        values.append(f"%{speciality}%")
+
+    where_clause = f"WHERE {' AND '.join(filters)}" if filters else ""
+    query = f"{hospital_base} {where_clause}"
+
+    try:
+        with conn.cursor(cursor_factory=RealDictCursor) as cur:
+            cur.execute(query, tuple(values))
+            results = cur.fetchall()
+            return jsonify(results)
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
 
 
 # Main entry point

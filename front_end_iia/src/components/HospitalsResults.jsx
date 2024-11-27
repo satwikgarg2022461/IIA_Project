@@ -1,36 +1,13 @@
 import { Card, ConfigProvider, theme, Descriptions, Button } from "antd";
-import { useState } from "react";
-import { ArrowLeftOutlined } from '@ant-design/icons'; // Importing the back arrow icon // Importing useHistory for navigation (if using React Router)
-import HospitalLogo from "../assets/hospital_svg.png"; // Example image (replace as needed)
+import { ArrowLeftOutlined } from "@ant-design/icons"; // Importing the back arrow icon
+import { useLocation } from "react-router-dom"; // Importing useLocation for accessing state
 
 const HospitalResults = () => {
-  // Dummy data
-  const response = {
-    bestMatch: {
-      Name: "Delhi Health Center",
-      Specialization: "General Healthcare",
-      ContactNumber: "9876543210",
-      Address: "123 Health St, New Delhi, India",
-      Email: "contact@delhihealth.com",
-      Doctors: [
-        {
-          Name: "Dr. Rajesh Kumar",
-          Specialization: "Cardiology",
-          AppointmentDetails: [
-            { AppointmentPrice: 2200, Date: "2024-11-08", Time: "10:00" },
-            { AppointmentPrice: 3500, Date: "2024-11-09", Time: "14:00" },
-          ],
-        },
-      ],
-    },
-  };
+  const location = useLocation();
+  const { results } = location.state || { results: [] };
 
-  const { bestMatch } = response;
+  console.log("Received Results:", results);
 
-  // State for the selected hospital
-  const [selectedHospital] = useState(bestMatch);
-
-  // Using useHistory hook for navigation (if using React Router)
   // Function to handle back button click
   const handleBackClick = () => {
     window.history.back(); // Navigates to the previous page
@@ -63,82 +40,51 @@ const HospitalResults = () => {
           </h1>
         </header>
 
-        <div className="flex-grow flex items-center justify-center bg-gray-950">
-          <div className="w-full max-w-3xl">
-            <div className="bg-gray-800 border border-gray-700 shadow-2xl rounded-lg p-6">
-              <h2 className="text-xl font-semibold text-gray-100 mb-4">
-                Hospital Details
-              </h2>
-              <Card
-                className="shadow-lg bg-gray-900 border-gray-800 text-gray-100"
-                bodyStyle={{ padding: "1rem" }}
-              >
-                <Descriptions
-                  title={
-                    <span className="text-lg font-bold text-blue-500">
-                      {selectedHospital.Name}
-                    </span>
-                  }
-                  column={1}
-                  size="small"
-                  bordered
-                  labelStyle={{
-                    color: "#a3a3a3", // Tailwind gray-400
-                    fontWeight: "bold",
-                  }}
-                  contentStyle={{
-                    color: "#f3f4f6", // Tailwind gray-100
-                  }}
+        {/* Main Content */}
+        <div className="flex-grow flex flex-col items-center bg-gray-950 px-4 py-8">
+          <h2 className="text-xl font-semibold text-gray-100 mb-6">
+            Hospital Search Results
+          </h2>
+          <div className="w-full max-w-5xl grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+            {results.length > 0 ? (
+              results.map((hospital, index) => (
+                <Card
+                  key={index}
+                  className="shadow-lg bg-gray-900 border-gray-800 text-gray-100"
+                  bodyStyle={{ padding: "1rem" }}
                 >
-                  <Descriptions.Item label="Specialization">
-                    {selectedHospital.Specialization}
-                  </Descriptions.Item>
-                  <Descriptions.Item label="Contact Number">
-                    {selectedHospital.ContactNumber}
-                  </Descriptions.Item>
-                  <Descriptions.Item label="Email">
-                    {selectedHospital.Email}
-                  </Descriptions.Item>
-                  <Descriptions.Item label="Address">
-                    {selectedHospital.Address}
-                  </Descriptions.Item>
-                </Descriptions>
-
-                {/* Doctors */}
-                <div>
-                  <h4 className="text-md font-medium text-green-500 mt-6 mb-2">
-                    Available Appointments
-                  </h4>
-                  {selectedHospital.Doctors.map((doctor, dIndex) => (
-                    <div key={dIndex}>
-                      {doctor.AppointmentDetails.map((appointment, aIndex) => (
-                        <Card
-                          key={aIndex}
-                          className="bg-gray-900 mb-6 border-gray-700"
-                          bodyStyle={{ padding: "1rem" }}
-                        >
-                          <div className="text-gray-100">
-                            <p className="font-medium mb-2">
-                              <strong>Doctor:</strong> {doctor.Name}
-                            </p>
-                            <p className="font-medium mb-2">
-                              <strong>Specialization:</strong>{" "}
-                              {doctor.Specialization}
-                            </p>
-                            <p className="text-sm mb-2">
-                              <strong>Date:</strong> {appointment.Date} |{" "}
-                              <strong>Time:</strong> {appointment.Time} |{" "}
-                              <strong>Price:</strong> ₹
-                              {appointment.AppointmentPrice}
-                            </p>
-                          </div>
-                        </Card>
-                      ))}
-                    </div>
-                  ))}
-                </div>
-              </Card>
-            </div>
+                  <Descriptions
+                    title={
+                      <span className="text-lg font-bold text-blue-500">
+                        {hospital.hospital_name ?? "None"}
+                      </span>
+                    }
+                    column={1}
+                    size="small"
+                    bordered
+                    labelStyle={{
+                      color: "#a3a3a3", // Tailwind gray-400
+                      fontWeight: "bold",
+                    }}
+                    contentStyle={{
+                      color: "#f3f4f6", // Tailwind gray-100
+                    }}
+                  >
+                    <Descriptions.Item label="Specialization">
+                      {hospital.hospital_speciality ?? "None"}
+                    </Descriptions.Item>
+                    <Descriptions.Item label="Email">
+                      {hospital.hospital_email ?? "None"}
+                    </Descriptions.Item>
+                    <Descriptions.Item label="Address">
+                      {hospital.hospital_address ?? "None"}
+                    </Descriptions.Item>
+                  </Descriptions>
+                </Card>
+              ))
+            ) : (
+              <div className="text-gray-300 text-lg">No results found.</div>
+            )}
           </div>
         </div>
 
