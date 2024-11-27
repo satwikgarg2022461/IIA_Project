@@ -1,21 +1,44 @@
 import { ConfigProvider, theme, Input, Button, Form } from "antd"; // Ant Design components
 import { ArrowLeftOutlined } from "@ant-design/icons"; // Ant Design icon
-import HospitalLogo from "../assets/hospital_svg.png"; // Logo import
+import { useNavigate } from "react-router-dom"; // React Router for navigation
+import axios from "axios"; // Axios for API calls
 
 const Hospital = () => {
     const [form] = Form.useForm();
+    const navigate = useNavigate(); // Hook for navigation
 
     const handleSubmit = () => {
         form.validateFields()
             .then(values => {
-                const { name, area, specialty } = values;
-                if (!name && !area && !specialty) {
+                const { name, specialty } = values;
+
+                // Check which fields are filled
+                const filledFields = [];
+                if (name) filledFields.push("name");
+                if (specialty) filledFields.push("specialty");
+
+                if (filledFields.length === 0) {
                     alert("Please fill at least one field.");
-                } else {
-                    const requestData = { name, area, specialty };
-                    console.log("Request Data:", requestData);
-                    // Perform your request here
+                    return;
                 }
+
+                const requestData = { name, specialty };
+
+                console.log("Request Data:", requestData);
+
+                // Axios POST request to the backend API
+                axios
+                    .post("http://127.0.0.1:5002/get-hospital-info", requestData)
+                    .then(response => {
+                        console.log("Response:", response.data);
+
+                        // Navigate to the results page with the data
+                        navigate("/hospitals-results", { state: { results: response.data } });
+                    })
+                    .catch(error => {
+                        console.error("Error:", error.response || error.message);
+                        alert("An error occurred while fetching the data. Please try again.");
+                    });
             })
             .catch(errorInfo => {
                 console.log("Validation Failed:", errorInfo);
@@ -24,7 +47,6 @@ const Hospital = () => {
 
     const handleBack = () => {
         console.log("Back button clicked");
-        // Add your back navigation logic here, e.g., navigate to the previous page.
         window.history.back();
     };
 
@@ -33,10 +55,10 @@ const Hospital = () => {
             theme={{
                 algorithm: theme.darkAlgorithm,
                 token: {
-                    colorBgContainer: "#030712", // Tailwind `gray-800`
-                    colorText: "#f3f4f6", // Tailwind `gray-100`
-                    colorBorder: "#374151", // Tailwind `gray-700`
-                    colorPrimaryHover: "#3b82f6", // Blue hover
+                    colorBgContainer: "#030712",
+                    colorText: "#f3f4f6",
+                    colorBorder: "#374151",
+                    colorPrimaryHover: "#3b82f6",
                 },
             }}
         >
@@ -56,7 +78,6 @@ const Hospital = () => {
                     </h1>
                 </header>
 
-
                 {/* Form Section */}
                 <main className="w-full flex flex-col items-center mt-12">
                     <div className="bg-gray-800 rounded-lg shadow-lg w-4/5 max-w-3xl p-8 border border-gray-700">
@@ -71,17 +92,6 @@ const Hospital = () => {
                             >
                                 <Input
                                     placeholder="Enter hospital name"
-                                    className="bg-gray-950 text-gray-100 border-gray-700"
-                                />
-                            </Form.Item>
-
-                            {/* Area Field */}
-                            <Form.Item
-                                label={<span className="text-gray-100">Area:</span>}
-                                name="area"
-                            >
-                                <Input
-                                    placeholder="Enter area or location"
                                     className="bg-gray-950 text-gray-100 border-gray-700"
                                 />
                             </Form.Item>

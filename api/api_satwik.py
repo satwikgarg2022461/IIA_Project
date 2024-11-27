@@ -1,7 +1,7 @@
 import datetime
 
 import mysql.connector
-from flask import Flask, jsonify
+from flask import Flask, jsonify, request
 
 app = Flask(__name__)
 
@@ -123,6 +123,66 @@ def get_appointment_test():
         'Date': appt[7],
         'Time': str(appt[8]),
     } for appt in appointments])
+
+
+# Route to get appointment details for a doctor
+@app.route('/api/doctor-appointment', methods=['POST'])
+def get_doctor_appointment():
+    doctor_name = request.args.get('doctor_name')
+    email = request.args.get('email')
+    contact_number = request.args.get('contact_number')
+    hospital_name = request.args.get('hospital_name')
+
+    if not (doctor_name and email and contact_number and hospital_name):
+        return jsonify({"error": "Missing required parameters"}), 400
+
+    query = """
+        SELECT AD.Date, AD.Time
+        FROM AppointmentDoctor AD
+        JOIN Doctor D ON AD.DID = D.DID
+        JOIN Hospital H ON AD.HID = H.HID
+        WHERE D.Name = %s AND D.Email = %s AND D.ContactNumber = %s AND H.Name = %s;
+    """
+    appointment = execute_query(query, (doctor_name, email, contact_number, hospital_name), fetchall=False)
+
+    if not appointment:
+        return jsonify({"error": "No appointment found"}), 404
+
+    return jsonify({
+        "AppointmentDate": appointment[0],
+        "AppointmentTime": str(appointment[1])
+    })
+
+
+# Route to get appointment details for a test
+@app.route('/api/test-appointment', methods=['POST'])
+def get_test_appointment():
+    test_name = request.args.get('test_name')
+    hospital_name = request.args.get('hospital_name')
+
+    if not (test_name and hospital_name):
+        return jsonify({"error": "Missing required parameters"}), 400
+
+    query = """
+        SELECT AT.Date, AT.Time
+        FROM AppointmentTest AT
+        JOIN Test T ON AT.TID = T.TID
+        JOIN Hospital H ON AT.HID = H.HID
+        WHERE T.Name = %s AND H.Name = %s;
+    """
+    appointment = execute_query(query, (test_name, hospital_name), fetchall=False)
+
+    if not appointment:
+        return jsonify({"error": "No appointment found"}), 404
+
+    return jsonify({
+        "AppointmentDate": appointment[0],
+        "AppointmentTime": str(appointment[1])
+    })
+
+@app.route('/api/test', methods=['GET'])
+def get_test():
+    return jsonify({"message": "Hello World"}), 200
 
 if __name__ == '__main__':
     app.run(debug=True, port=5000)

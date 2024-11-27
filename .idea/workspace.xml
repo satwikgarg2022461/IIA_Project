@@ -5,12 +5,20 @@
   </component>
   <component name="ChangeListManager">
     <list default="true" id="7f38b8c9-b779-4531-a731-6783f66a4370" name="Changes" comment="">
+      <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/Warehouse_API.py" beforeDir="false" afterPath="$PROJECT_DIR$/Warehouse_API.py" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/api/api_satwik.py" beforeDir="false" afterPath="$PROJECT_DIR$/api/api_satwik.py" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/api/saurav_api.py" beforeDir="false" afterPath="$PROJECT_DIR$/api/saurav_api.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/front_end_iia/package-lock.json" beforeDir="false" afterPath="$PROJECT_DIR$/front_end_iia/package-lock.json" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/front_end_iia/package.json" beforeDir="false" afterPath="$PROJECT_DIR$/front_end_iia/package.json" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/front_end_iia/src/App.jsx" beforeDir="false" afterPath="$PROJECT_DIR$/front_end_iia/src/App.jsx" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/front_end_iia/src/components/Doctors.jsx" beforeDir="false" afterPath="$PROJECT_DIR$/front_end_iia/src/components/Doctors.jsx" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/front_end_iia/src/components/DoctorsResults.jsx" beforeDir="false" afterPath="$PROJECT_DIR$/front_end_iia/src/components/DoctorsResults.jsx" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/front_end_iia/src/components/Hospitals.jsx" beforeDir="false" afterPath="$PROJECT_DIR$/front_end_iia/src/components/Hospitals.jsx" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/front_end_iia/src/components/HospitalsResults.jsx" beforeDir="false" afterPath="$PROJECT_DIR$/front_end_iia/src/components/HospitalsResults.jsx" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/front_end_iia/src/components/TestResults.jsx" beforeDir="false" afterPath="$PROJECT_DIR$/front_end_iia/src/components/TestResults.jsx" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/front_end_iia/src/components/Tests.jsx" beforeDir="false" afterPath="$PROJECT_DIR$/front_end_iia/src/components/Tests.jsx" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/main.py" beforeDir="false" afterPath="$PROJECT_DIR$/main.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/sql/db_satwik.mysql" beforeDir="false" afterPath="$PROJECT_DIR$/sql/db_satwik.mysql" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/sql/saurav_database.mysql" beforeDir="false" afterPath="$PROJECT_DIR$/sql/saurav_database.mysql" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/sql/warehouse.sql" beforeDir="false" afterPath="$PROJECT_DIR$/sql/warehouse.sql" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
@@ -35,23 +43,24 @@
     <option name="hideEmptyMiddlePackages" value="true" />
     <option name="showLibraryContents" value="true" />
   </component>
-  <component name="PropertiesComponent">{
-  &quot;keyToString&quot;: {
-    &quot;Python.Unnamed.executor&quot;: &quot;Run&quot;,
-    &quot;Python.api_satwik.executor&quot;: &quot;Profiler&quot;,
-    &quot;RunOnceActivity.ShowReadmeOnStart&quot;: &quot;true&quot;,
-    &quot;git-widget-placeholder&quot;: &quot;main&quot;,
-    &quot;ignore.virus.scanning.warn.message&quot;: &quot;true&quot;,
-    &quot;last_opened_file_path&quot;: &quot;C:/Btech/Sem 5/IIA/IIA_Project&quot;,
-    &quot;node.js.detected.package.eslint&quot;: &quot;true&quot;,
-    &quot;node.js.detected.package.tslint&quot;: &quot;true&quot;,
-    &quot;node.js.selected.package.eslint&quot;: &quot;(autodetect)&quot;,
-    &quot;node.js.selected.package.tslint&quot;: &quot;(autodetect)&quot;,
-    &quot;nodejs_package_manager_path&quot;: &quot;npm&quot;,
-    &quot;settings.editor.selected.configurable&quot;: &quot;com.jetbrains.python.configuration.PyActiveSdkModuleConfigurable&quot;,
-    &quot;vue.rearranger.settings.migration&quot;: &quot;true&quot;
+  <component name="PropertiesComponent"><![CDATA[{
+  "keyToString": {
+    "Python.Unnamed.executor": "Run",
+    "Python.api_satwik.executor": "Profiler",
+    "RunOnceActivity.ShowReadmeOnStart": "true",
+    "git-widget-placeholder": "main",
+    "ignore.virus.scanning.warn.message": "true",
+    "last_opened_file_path": "C:/Btech/Sem 5/IIA/IIA_Project",
+    "node.js.detected.package.eslint": "true",
+    "node.js.detected.package.tslint": "true",
+    "node.js.selected.package.eslint": "(autodetect)",
+    "node.js.selected.package.tslint": "(autodetect)",
+    "nodejs_package_manager_path": "npm",
+    "settings.editor.selected.configurable": "com.jetbrains.python.configuration.PyActiveSdkModuleConfigurable",
+    "ts.external.directory.path": "C:\\Program Files\\JetBrains\\PyCharm 2024.2.2\\plugins\\javascript-plugin\\jsLanguageServicesImpl\\external",
+    "vue.rearranger.settings.migration": "true"
   }
-}</component>
+}]]></component>
   <component name="RecentsManager">
     <key name="MoveFile.RECENT_KEYS">
       <recent name="C:\Btech\Sem 5\IIA\IIA_Project\sql" />
@@ -148,7 +157,7 @@
       <workItem from="1732612735730" duration="345000" />
       <workItem from="1732632346778" duration="3167000" />
       <workItem from="1732644110821" duration="4513000" />
-      <workItem from="1732690061891" duration="25604000" />
+      <workItem from="1732690061891" duration="39941000" />
     </task>
     <servers />
   </component>

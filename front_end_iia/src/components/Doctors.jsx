@@ -1,27 +1,53 @@
 import { ConfigProvider, theme, Input, Button, Form } from "antd"; // Ant Design components
 import { ArrowLeftOutlined } from "@ant-design/icons"; // Ant Design icon
+import axios from "axios"; // Import Axios
+import { useNavigate } from "react-router-dom";
 import DoctorLogo from "../assets/doctor_svg.png"; // Logo import
-
 
 const Doctor = () => {
     const [form] = Form.useForm();
+    const navigate = useNavigate();
 
     const handleSubmit = () => {
-        form.validateFields()
-            .then(values => {
-                const { name, hospital, qualifications, specialty } = values;
-                if (!name && !hospital && !qualifications && !specialty) {
-                    alert("Please fill at least one field.");
-                } else {
-                    const requestData = { name, hospital, qualifications, specialty };
-                    console.log("Request Data:", requestData);
-                    // Perform your request here
-                }
-            })
-            .catch(errorInfo => {
-                console.log("Validation Failed:", errorInfo);
-            });
-    };
+    form.validateFields()
+        .then(values => {
+            const { name, specialty } = values;
+
+            // Check which fields are filled
+            const filledFields = [];
+            if (name) filledFields.push("name");
+            if (specialty) filledFields.push("specialty");
+
+            if (filledFields.length === 0) {
+                alert("Please fill at least one field.");
+                return;
+            }
+
+            // Construct the signal string in alphabetical order
+            // const signal = filledFields.sort().join("_");
+            const requestData = { name, specialty};
+
+            console.log("Request Data:", requestData);
+
+            // Axios POST request to the backend API
+            axios
+                .post("http://127.0.0.1:5002/get-doctor-info", requestData)
+                .then(response => {
+                    console.log("Response:", response.data);
+                    // alert("Search results received. Check console for data.");
+                    // Replace with your UI update logic
+                    navigate("/doctors-results", { state: { results: response.data } });
+                })
+                .catch(error => {
+                    console.error("Error:", error.response || error.message);
+                    alert("An error occurred while fetching the data. Please try again.");
+                });
+        })
+        .catch(errorInfo => {
+            console.log("Validation Failed:", errorInfo);
+        });
+};
+
 
     const handleBack = () => {
         console.log("Back button clicked");
@@ -57,7 +83,6 @@ const Doctor = () => {
                     </h1>
                 </header>
 
-
                 {/* Form Section */}
                 <main className="w-full flex flex-col items-center mt-12">
                     <div className="bg-gray-800 rounded-lg shadow-lg w-4/5 max-w-3xl p-8 border border-gray-700">
@@ -76,27 +101,6 @@ const Doctor = () => {
                                 />
                             </Form.Item>
 
-                            {/* Hospital Field */}
-                            <Form.Item
-                                label={<span className="text-gray-100">Hospital:</span>}
-                                name="hospital"
-                            >
-                                <Input
-                                    placeholder="Enter hospital name"
-                                    className="bg-gray-950 text-gray-100 border-gray-700"
-                                />
-                            </Form.Item>
-
-                            {/* Qualifications Field */}
-                            <Form.Item
-                                label={<span className="text-gray-100">Qualifications:</span>}
-                                name="qualifications"
-                            >
-                                <Input
-                                    placeholder="Enter qualifications"
-                                    className="bg-gray-950 text-gray-100 border-gray-700"
-                                />
-                            </Form.Item>
 
                             {/* Specialty Field */}
                             <Form.Item

@@ -1,26 +1,53 @@
 import { ConfigProvider, theme, Input, Button, Form } from "antd"; // Ant Design components
 import { ArrowLeftOutlined } from "@ant-design/icons"; // Ant Design icon
-import HospitalLogo from "../assets/hospital_svg.png"; // Logo import
+import HospitalLogo from "../assets/hospital_svg.png";
+import axios from "axios";
+import {useNavigate} from "react-router-dom"; // Logo import
 
 const Hospital = () => {
     const [form] = Form.useForm();
+    const navigate = useNavigate();
 
     const handleSubmit = () => {
         form.validateFields()
             .then(values => {
-                const { name, area, specialty } = values;
-                if (!name && !area && !specialty) {
+                const {t_name, h_name} = values;
+
+                // Check which fields are filled
+                const filledFields = [];
+                if (t_name) filledFields.push("t_name");
+                if (h_name) filledFields.push("h_name");
+
+                if (filledFields.length === 0) {
                     alert("Please fill at least one field.");
-                } else {
-                    const requestData = { name, area, specialty };
-                    console.log("Request Data:", requestData);
-                    // Perform your request here
+                    return;
                 }
+
+
+                // Construct the signal string in alphabetical order
+                // const signal = filledFields.sort().join("_");
+                const requestData = {t_name, h_name};
+
+                console.log("Request Data:", requestData);
+
+                // Axios POST request to the backend API
+                axios
+                    .post("http://127.0.0.1:5002/get-test-info", requestData)
+                    .then(response => {
+                        console.log("Response:", response.data);
+                        // alert("Search results received. Check console for data.");
+                        // Replace with your UI update logic
+                        navigate("/tests-results", { state: { results: response.data } });
+                    })
+                    .catch(error => {
+                        console.error("Error:", error.response || error.message);
+                        alert("An error occurred while fetching the data. Please try again.");
+                    });
             })
             .catch(errorInfo => {
                 console.log("Validation Failed:", errorInfo);
             });
-    };
+    }
 
     const handleBack = () => {
         console.log("Back button clicked");
@@ -65,8 +92,8 @@ const Hospital = () => {
                         <Form form={form} layout="vertical" className="grid grid-cols-2 gap-6">
                             {/* Name Field */}
                             <Form.Item
-                                label={<span className="text-gray-100">Type:</span>}
-                                name="type"
+                                label={<span className="text-gray-100">Test Name:</span>}
+                                name="t_name"
                             >
                                 <Input
                                     placeholder="Enter test type"
@@ -74,16 +101,17 @@ const Hospital = () => {
                                 />
                             </Form.Item>
 
-                            {/* Area Field */}
                             <Form.Item
-                                label={<span className="text-gray-100">Area:</span>}
-                                name="area"
+                                label={<span className="text-gray-100">Hospital name:</span>}
+                                name="h_name"
                             >
                                 <Input
-                                    placeholder="Enter area or location"
+                                    placeholder="Enter test type"
                                     className="bg-gray-950 text-gray-100 border-gray-700"
                                 />
                             </Form.Item>
+
+
                         </Form>
                         <div className="flex justify-end mt-6">
                             <Button
