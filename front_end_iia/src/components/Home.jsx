@@ -3,6 +3,7 @@ import { useNavigate } from "react-router-dom"; // Import useNavigate
 import DoctorsImage from "../assets/doctor.jpg";
 import HospitalsImage from "../assets/hospital.jpg";
 import TestsImage from "../assets/test.jpg";
+import LLMImage from "../assets/LLM.jpg";
 
 const Home = () => {
     const navigate = useNavigate(); // Initialize navigate function
@@ -52,7 +53,7 @@ const Home = () => {
                                 }
                                 onClick={() => handleCardClick("/doctors")} // Handle click to navigate
                             >
-                                <Card.Meta title="Doctors" description="Look for a doctor that suits your health." />
+                                <Card.Meta title="Doctors" description="Look for a doctor that suits your health."/>
                             </Card>
                         </div>
                         {/* Hospitals */}
@@ -69,7 +70,7 @@ const Home = () => {
                                 }
                                 onClick={() => handleCardClick("/hospitals")} // Handle click to navigate
                             >
-                                <Card.Meta title="Hospitals" description="Find any hospital with ease and no hassles." />
+                                <Card.Meta title="Hospitals" description="Find any hospital with ease."/>
                             </Card>
                         </div>
                         {/* Tests */}
@@ -86,14 +87,33 @@ const Home = () => {
                                 }
                                 onClick={() => handleCardClick("/tests")} // Handle click to navigate
                             >
-                                <Card.Meta title="Tests" description="Get your tests done with ease. and no Hassles" />
+                                <Card.Meta title="Tests" description="Get your tests done with ease. and no Hassles"/>
+                            </Card>
+                        </div>
+
+                        {/*    LLM*/}
+                        <div className="flex flex-col items-center group w-64 h-72">
+                            <Card
+                                hoverable
+                                className="w-full h-full shadow-lg"
+                                cover={
+                                    <img
+                                        src={LLMImage}
+                                        alt="Tests"
+                                        className="h-40 object-cover"
+                                    />
+                                }
+                                onClick={() => handleCardClick("/LLM")} // Handle click to navigate
+                            >
+                                <Card.Meta title="LLM Search" description="Use LLM to get your query"/>
                             </Card>
                         </div>
                     </div>
                 </div>
 
                 {/* Footer */}
-                <footer className="w-full bg-gray-800 border-t border-gray-700 py-2 flex justify-between px-6 text-gray-400 text-sm shadow-lg">
+                <footer
+                    className="w-full bg-gray-800 border-t border-gray-700 py-2 flex justify-between px-6 text-gray-400 text-sm shadow-lg">
                     <span className="hover:text-blue-500 transition duration-300 cursor-pointer">
                         Terms & Conditions
                     </span>

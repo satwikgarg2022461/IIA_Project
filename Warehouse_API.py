@@ -1,5 +1,6 @@
 from flask import Flask, request, jsonify
 import psycopg2
+from nltk.sem.chat80 import sql_query
 from psycopg2.extras import Json
 from psycopg2.extras import RealDictCursor
 import datetime
@@ -19,7 +20,7 @@ conn = psycopg2.connect(
     host=DB_HOST, dbname=DB_NAME, user=DB_USER, password=DB_PASSWORD, port=PORT
 )
 app = Flask(__name__)
-CORS(app, resources={r"/*": {"origins": "http://localhost:5173"}})
+CORS(app)
 
 
 @app.after_request
@@ -489,6 +490,132 @@ def get_hospital_info():
             return jsonify(results)
     except Exception as e:
         return jsonify({"error": str(e)}), 500
+
+
+# import openai
+
+# client = OpenAI()
+
+# Set up OpenAI API Key (replace with your key)
+# OpenAI.api_key = "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"
+
+
+
+
+@app.route("/LLM", methods=["POST"])
+def generate_and_execute_query():
+    try:
+        data = request.get_json()
+        query = data.get("query")
+        import os
+        import google.generativeai as genai
+
+        genai.configure(api_key="AIzaSyADuAM_NP8YBkKiNu45wKopqpOVetl4lXY")
+
+        # Create the model
+        generation_config = {
+            "temperature": 1,
+            "top_p": 0.95,
+            "top_k": 40,
+            "max_output_tokens": 8192,
+            "response_mime_type": "text/plain",
+        }
+
+        model = genai.GenerativeModel(
+            model_name="gemini-1.5-flash",
+            generation_config=generation_config,
+        )
+
+        chat_session = model.start_chat(
+            history=[
+            ]
+        )
+
+        prompt = f"""
+        Database Schema:
+    doctor table: d_id, d_name, phone, email, address, speciality, experience, education, h_id[]
+    appointment_doctor table: ad_id, d_id, h_id, time, date, price, status
+    hospital table: h_id, h_name, email, address, speciality
+    test table: t_id, t_name, description, cost
+    appointment_test table: at_id, t_id, h_id, time, date, status
+    SQL Query Rules:
+    The schema is a postgresql schema
+    Only use the schema provided above and take no other assumption for schema
+    Start with SELECT as all queries are for fetching data.
+    Queries must align with the given database schema and reference the correct tables and columns.
+    Avoid placeholders (like ? or $1). Use explicit conditions or fixed values where necessary.
+    Queries should be deterministic—producing the same result for the same input.
+    Write a single SQL query unless explicitly required otherwise.
+    Ensure the query retrieves all necessary fields as requested in the prompt.
+    Queries should be case-insensitive (use lowercase SQL syntax).
+    If the prompt mentions a specific limit (e.g., "top 5"), ensure the query uses the LIMIT clause to restrict results.
+    Understand the natural language query before constructing the SQL.
+    If you cannot generate a query than don't generate any code to create a new table but if you can answer the query by just not showing some attributes do it
+    Prompts:
+    Top 5 doctors based on experience
+    "Write an SQL query to fetch the top 5 doctors with the highest experience from the doctor table. Include the columns d_id, d_name, and experience, and sort the results in descending order of experience. Limit the output to 5 rows."
+    
+    Find doctors associated with a specific hospital
+    "Write an SQL query to list all doctors associated with a specific hospital. Use the doctor table and retrieve the columns d_id, d_name, and speciality. Filter results where the provided hospital ID is present in the h_id array column."
+    
+    List all appointments for a specific doctor on a given date
+    "Write an SQL query to fetch all appointments for a doctor on a specific date from the appointment_doctor table. Include ad_id, h_id, time, price, and status. Filter by the given doctor’s d_id and the specified date in the date column."
+    
+    Find hospitals offering a specific speciality
+    "Write an SQL query to find all hospitals offering a specific speciality. Use the hospital table and retrieve the columns h_id, h_name, and address. Filter by the provided speciality in the speciality column."
+    
+    List all tests and their costs
+    "Write an SQL query to fetch the details of all tests from the test table. Include the columns t_id, t_name, and cost, and sort the results alphabetically by t_name."
+    
+    Find all tests scheduled at a hospital on a specific date
+    "Write an SQL query to retrieve all scheduled tests at a specific hospital on a given date from the appointment_test table. Include the columns at_id, t_id, time, and status. Filter results by the hospital ID (h_id) and date in the date column."
+    
+    Count of appointments per doctor
+    "Write an SQL query to count the total number of appointments for each doctor from the appointment_doctor table and doctor table. Group the results by d_id and include the columns d_id, d_name and total_appointments. Sort the results by total_appointments in descending order."
+    
+    Find the total revenue from doctor appointments
+    "Write an SQL query to calculate the total revenue generated from doctor appointments in the appointment_doctor table. Sum the price column and return the result as total_revenue."
+    
+    Fetch hospital details with most scheduled tests
+    "Write an SQL query to identify the hospital with the highest number of scheduled tests. Use the appointment_test table to count the appointments per h_id, and join with the hospital table to retrieve the hospital’s h_id, h_name, and address. Sort by the count in descending order and limit the output to 1 row."
+    
+    Fetch details of doctors with no hospital associations
+    "Write an SQL query to find all doctors who are not associated with any hospital. Use the doctor table and retrieve the columns d_id and d_name. Filter results where the h_id array column is null or empty."
+    
+    
+    
+        User query: "{query}"
+    
+        Generate the SQL query in PostgreSQL syntax.
+        """
+
+        response = chat_session.send_message(f'{prompt}')
+
+        print(response.text)
+        sql_query = response.text
+
+        sql_query = sql_query[6:-4].strip()
+        print("Generated SQL Query:", sql_query)
+
+        with conn.cursor() as cur:
+            try:
+                cur.execute(sql_query)
+                if cur.description:  # If the query returns results
+                    results = cur.fetchall()
+                    columns = [desc[0] for desc in cur.description]
+                    data = [dict(zip(columns, row)) for row in results]
+                    return jsonify({"query": sql_query, "results": data})
+                else:  # If the query doesn't return results (e.g., UPDATE, DELETE)
+                    conn.commit()
+                    return jsonify({"query": sql_query, "message": "Query executed successfully"})
+            except Exception as e:
+                conn.rollback()  # Rollback the transaction
+                return jsonify({"error": "Transaction failed and has been rolled back", "details": str(e)}), 400
+
+    except Exception as e:
+        return jsonify({"error": "An error occurred", "details": str(e)}), 500
+
+
 
 
 # Main entry point
