@@ -492,14 +492,6 @@ def get_hospital_info():
         return jsonify({"error": str(e)}), 500
 
 
-# import openai
-
-# client = OpenAI()
-
-# Set up OpenAI API Key (replace with your key)
-# OpenAI.api_key = "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"
-
-
 
 
 @app.route("/LLM", methods=["POST"])
