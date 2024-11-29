@@ -510,7 +510,7 @@ def generate_and_execute_query():
         import os
         import google.generativeai as genai
 
-        genai.configure(api_key="AIzaSyADuAM_NP8YBkKiNu45wKopqpOVetl4lXY")
+        genai.configure(api_key="")
 
         # Create the model
         generation_config = {
